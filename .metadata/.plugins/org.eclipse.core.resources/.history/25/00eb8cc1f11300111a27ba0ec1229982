@@ -1,0 +1,5 @@
+package com.kiranabazaar.config;
+
+public class CorsConfig {
+
+}

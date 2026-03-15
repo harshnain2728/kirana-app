@@ -1,0 +1,536 @@
+
+===== Kirana Bazar Application Sprint Planning =====
+
+
+
+## 1. High-level Overview (What we are building)
+
+**Kirana Bazaar App (like Zepto/Blinkit)**
+
+Core features:
+
+* User app (browse, order)
+* Admin app (manage products, orders)
+* Delivery flow (basic)
+* Single Spring Boot monolith
+* REST APIs
+* MySQL database
+* CI/CD pipeline
+* Deployed on cloud later (optional)
+
+---
+
+## 2. Tech Stack
+
+**Backend**
+
+* Java 17
+* Spring Boot
+* Spring Data JPA
+* Spring Security (basic)
+* Hibernate
+* MySQL
+* Maven
+
+**DevOps**
+
+* GitHub
+* GitHub Actions (CI/CD)
+* Docker
+* Docker Compose
+
+**IDE**
+
+* Eclipse
+
+---
+
+## 3. Monolithic Architecture (Simple & Clean)
+
+Even though it’s monolithic, we’ll keep **clear separation by packages**, so it’s future-proof.
+
+```
+Controller → Service → Repository → Database
+```
+
+---
+
+## 4. Folder Structure (VERY IMPORTANT)
+
+Use this **exact structure** in Eclipse:
+
+```
+kirana-bazaar
+│
+├── src/main/java
+│   └── com.kiranabazaar
+│       ├── KiranaBazaarApplication.java
+│       │
+│       ├── config
+│       │   ├── SecurityConfig.java
+│       │   └── SwaggerConfig.java
+│       │
+│       ├── common
+│       │   ├── exception
+│       │   │   ├── GlobalExceptionHandler.java
+│       │   │   └── ResourceNotFoundException.java
+│       │   └── response
+│       │       └── ApiResponse.java
+│       │
+│       ├── user
+│       │   ├── controller
+│       │   │   └── UserController.java
+│       │   ├── service
+│       │   │   └── UserService.java
+│       │   ├── repository
+│       │   │   └── UserRepository.java
+│       │   └── entity
+│       │       └── User.java
+│       │
+│       ├── product
+│       │   ├── controller
+│       │   │   └── ProductController.java
+│       │   ├── service
+│       │   │   └── ProductService.java
+│       │   ├── repository
+│       │   │   └── ProductRepository.java
+│       │   └── entity
+│       │       └── Product.java
+│       │
+│       ├── order
+│       │   ├── controller
+│       │   │   └── OrderController.java
+│       │   ├── service
+│       │   │   └── OrderService.java
+│       │   ├── repository
+│       │   │   └── OrderRepository.java
+│       │   └── entity
+│       │       └── Order.java
+│       │
+│       └── admin
+│           ├── controller
+│           └── service
+│
+├── src/main/resources
+│   ├── application.yml
+│   ├── data.sql
+│   └── schema.sql
+│
+├── src/test/java
+│   └── com.kiranabazaar
+│       └── KiranaBazaarApplicationTests.java
+│
+├── Dockerfile
+├── docker-compose.yml
+├── pom.xml
+└── README.md
+```
+
+This structure works **perfectly in Eclipse**.
+
+---
+
+## 5. Sprint Planning (Backend Sprints )
+
+### 🟢 Sprint 1: Project Setup & Base Configuration
+
+**Goal:** App runs locally
+
+Tasks:
+
+* Create Spring Boot project in Eclipse
+* Setup MySQL connection
+* Create base package structure
+* Add Lombok, JPA, Validation
+* Test health endpoint
+
+Deliverables:
+
+* App starts
+* DB connected
+* `/health` API works
+
+---
+
+### 🟢 Sprint 2: User Module
+
+**Goal:** Users can register & login
+
+Tasks:
+
+* User entity
+* UserRepository
+* UserService
+* UserController
+* Basic authentication (no JWT yet)
+
+APIs:
+
+* Register user
+* Login user
+* Get user profile
+
+---
+
+### 🟢 Sprint 3: Product Module
+
+**Goal:** Product browsing
+
+Tasks:
+
+* Product entity
+* Admin add/update product
+* User fetch products
+* Pagination & sorting
+
+APIs:
+
+* Add product (admin)
+* List products
+* Search product
+
+---
+
+### 🟢 Sprint 4: Order Module
+
+**Goal:** Place and track orders
+
+Tasks:
+
+* Order entity
+* Order-item mapping
+* Place order
+* View order history
+
+APIs:
+
+* Place order
+* Get orders by user
+* Get order details
+
+---
+
+### 🟢 Sprint 5: Cart & Checkout
+
+**Goal:** Shopping experience
+
+Tasks:
+
+* Cart logic (DB or in-memory)
+* Add/remove items
+* Checkout flow
+* Calculate total price
+
+---
+
+### 🟢 Sprint 6: Admin Dashboard APIs
+
+**Goal:** Manage business
+
+Tasks:
+
+* View all orders
+* Update order status
+* Manage inventory
+* Low stock alerts
+
+---
+
+### 🟢 Sprint 7: Security & Validation
+
+**Goal:** Production readiness
+
+Tasks:
+
+* Spring Security
+* Role-based access (USER / ADMIN)
+* Input validation
+* Global exception handling
+
+---
+
+### 🟢 Sprint 8: DevOps (CI/CD)
+
+**Goal:** Automated deployment
+
+Tasks:
+
+* Dockerize app
+* Create Dockerfile
+* Setup docker-compose (App + MySQL)
+* GitHub Actions pipeline
+
+Pipeline:
+
+```
+Code Push → Build → Test → Docker Image → Deploy
+```
+
+---
+
+## 6. CI/CD (GitHub Actions – Simple)
+
+Example flow:
+
+```yaml
+- Checkout code
+- mvn clean install
+- Build Docker image
+- Push image
+- Deploy
+```
+
+No card required if using GitHub Actions.
+
+---
+
+
+
+
+
+
+
+
+
+
+============== Frontend Sprints =============
+
+Frontend Tech Stack (Recommended)
+
+Since you’re Java + Spring Boot focused, keep frontend modern but simple:
+
+React.js (industry standard)
+
+Vite or Create React App
+
+Tailwind CSS (fast UI, no heavy CSS)
+
+Axios (API calls)
+
+React Router
+
+JWT-based auth (later sprint)
+
+
+
+
+
+Frontend Sprint 1: Setup & Base UI
+
+Goal: App opens in browser with basic layout
+
+Tasks:
+
+Create React project
+
+Setup folder structure
+
+Setup routing
+
+Create base layout (Header, Footer)
+
+Environment config for backend URL
+
+Deliverables:
+
+App runs on localhost:5173 or 3000
+
+Home page loads
+
+Routing works
+
+Why:
+This gives a foundation so features can be added without rework.
+
+🟢 Frontend Sprint 2: Authentication (Login / Register)
+
+Goal: User can register & login
+
+Tasks:
+
+Register page UI
+
+Login page UI
+
+Connect to /api/users/register
+
+Connect to /api/users/login
+
+Store user data (localStorage)
+
+Deliverables:
+
+User registers from UI
+
+User logs in successfully
+
+Error messages shown properly
+
+Why:
+Auth is needed before cart, orders, and profile.
+
+🟢 Frontend Sprint 3: Product Listing (Core Kirana Feature)
+
+Goal: Show products like Blinkit
+
+Tasks:
+
+Product card component
+
+Product list page
+
+Category filters
+
+Search bar
+
+API integration for products
+
+Deliverables:
+
+Product grid visible
+
+Categories clickable
+
+Search works
+
+Why:
+This is the heart of a Kirana app.
+
+🟢 Frontend Sprint 4: Cart & Quantity Management
+
+Goal: Add items to cart
+
+Tasks:
+
+Add to cart button
+
+Increase / decrease quantity
+
+Cart page
+
+Cart state management
+
+Deliverables:
+
+Cart updates live
+
+Total price shown
+
+Items persist till refresh
+
+Why:
+Without cart, there is no commerce.
+
+🟢 Frontend Sprint 5: Checkout & Address
+
+Goal: Place an order
+
+Tasks:
+
+Address form
+
+Order summary
+
+Place order API
+
+Order success page
+
+Deliverables:
+
+Order placed successfully
+
+Order ID returned
+
+Why:
+This completes the buying flow.
+
+🟢 Frontend Sprint 6: Profile & Orders
+
+Goal: User account management
+
+Tasks:
+
+Profile page
+
+Order history page
+
+Logout
+
+Deliverables:
+
+User sees past orders
+
+Profile data visible
+
+🟢 Frontend Sprint 7: Admin Panel (Optional but Powerful)
+
+Goal: Manage Kirana store
+
+Tasks:
+
+Admin login
+
+Add/update products
+
+Manage orders
+
+
+
+
+
+
+
+Suggested Frontend Folder Structure
+src/
+ ├── api/
+ │    └── axios.js
+ ├── components/
+ │    ├── Header.jsx
+ │    ├── Footer.jsx
+ │    └── ProductCard.jsx
+ ├── pages/
+ │    ├── Login.jsx
+ │    ├── Register.jsx
+ │    ├── Home.jsx
+ │    ├── Cart.jsx
+ │    └── Profile.jsx
+ ├── routes/
+ │    └── AppRoutes.jsx
+ ├── context/
+ │    └── AuthContext.jsx
+ ├── utils/
+ ├── App.jsx
+ └── main.jsx
+How Backend & Frontend Connect
+
+Backend: localhost:8081/api/...
+
+Frontend: Axios calls these APIs
+
+CORS enabled in Spring Boot
+
+JSON request/response
+
+My Honest Recommendation for You
+
+Since you’re:
+
+From IT background
+
+Learning Spring Boot seriously
+
+Building a real product
+
+👉 Finish Backend Sprint 1 & 2 fully, then start Frontend Sprint 1 immediately
+
+If you want, next we can:
+
+Start Frontend Sprint 1 step by step
+
+Or connect your existing backend APIs to React
+
+Or design Blinkit-style UI screens
+
+Just tell me what you want to do next.
+
+

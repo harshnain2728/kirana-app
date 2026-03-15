@@ -1,0 +1,33 @@
+package com.kiranabazaar.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.kiranabazaar.entity.User;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    Optional<User> findByEmail(String email);
+}
+
+/*
+Explanation
+
+JpaRepository gives:
+
+save()
+
+findById()
+
+findAll()
+
+delete()
+
+findByEmail → Spring auto-generates query
+
+Optional → avoids NullPointerException
+*/
+
+
+

@@ -1,0 +1,5 @@
+package com.kiranabazaar.entity;
+
+public class User {
+
+}

@@ -1,0 +1,48 @@
+package com.kiranabazaar.controller;
+
+import java.util.Optional;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.kiranabazaar.entity.User;
+import com.kiranabazaar.service.UserService;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    // Register
+    @PostMapping("/register")
+    public ResponseEntity<User> register(@RequestBody User user) {
+        return ResponseEntity.ok(userService.register(user));
+    }
+
+    // Login
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody User user) {
+        User loggedInUser =
+                userService.login(user.getEmail(), user.getPassword());
+
+        if (loggedInUser == null) {
+            return ResponseEntity.status(401).body("Invalid credentials");
+        }
+
+        return ResponseEntity.ok(loggedInUser);
+    }
+
+    // Profile
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProfile(@PathVariable Long id) {
+        Optional<User> user = userService.getUserById(id);
+
+        return user.map(ResponseEntity::ok)
+                   .orElse(ResponseEntity.notFound().build());
+    }
+}

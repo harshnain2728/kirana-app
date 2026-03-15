@@ -1,0 +1,5 @@
+package com.kiranabazaar.repository;
+
+public class UserRepository {
+
+}
