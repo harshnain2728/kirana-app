@@ -1,10 +1,10 @@
 package com.kiranabazaar.controller;
 
-import java.awt.print.Pageable;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.query.Page;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -110,5 +110,16 @@ public class ProductController {
     	return ResponseEntity.ok(
     			new ApiResponse(true, "Product fetched successfully", productPage));
     			
+    }
+    
+    // Search product using keyword
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse> searchProducts(@RequestParam String keyword) {
+    	
+    	List<Product> products = productService.searchProducts(keyword);
+    	
+    	return ResponseEntity.ok
+    			(new ApiResponse(true, "Products fetched successfully",products)
+    					);
     }
 }
