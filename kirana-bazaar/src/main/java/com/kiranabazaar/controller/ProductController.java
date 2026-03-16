@@ -53,7 +53,7 @@ public class ProductController {
 
         if(product.isPresent()) {
         	return ResponseEntity.ok(
-        			new ApiResponse(true, "Product fetched successfully",product)
+        			new ApiResponse(true, "Product fetched successfully",product.get())
         			);
         }
         return ResponseEntity.status(404)
@@ -100,26 +100,14 @@ public class ProductController {
     							);
     		}
     }
-    
-    // API for pagination
-    @GetMapping("/page")
-    public ResponseEntity<ApiResponse> getProducts(Pageable pageable){
-    	
-    	Page<Product> productPage = productService.getProducts(pageable);
+ 
+    // Search product using keyword + Pagination + Sorting 
+    @GetMapping("/browse")
+    public ResponseEntity<ApiResponse> browseProducts(@RequestParam(required=false) String keyword, Pageable pageable){
+    	Page<Product> productPage = productService.getProducts(keyword, pageable);
     	
     	return ResponseEntity.ok(
-    			new ApiResponse(true, "Product fetched successfully", productPage));
-    			
-    }
-    
-    // Search product using keyword
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse> searchProducts(@RequestParam String keyword) {
-    	
-    	List<Product> products = productService.searchProducts(keyword);
-    	
-    	return ResponseEntity.ok
-    			(new ApiResponse(true, "Products fetched successfully",products)
-    					);
+    			new ApiResponse(true, "Products fetched successfully",productPage)
+    			);
     }
 }

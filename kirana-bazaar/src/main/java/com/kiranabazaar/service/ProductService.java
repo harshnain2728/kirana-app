@@ -61,14 +61,13 @@ public class ProductService {
     }
     
     
-    
-    // Add Pagination and Sorting in Product API
-    public Page<Product> getProducts(Pageable pageable){
-    	return productRepository.findAll(pageable);
-    }
-    
-    // find product using the keyword like "rice"
-    public List<Product> searchProducts(String keyword){
-    	return productRepository.findByNameContainingIgnoreCase(keyword);
+    // Search product using the keyword like "rice" (Search + Pagination)
+    public Page<Product> getProducts(String keyword, Pageable pageable) {
+
+        if (keyword != null && !keyword.isEmpty()) {
+            return  productRepository.findByNameContainingIgnoreCase(keyword, pageable);
+        }
+
+        return productRepository.findAll(pageable);
     }
 }

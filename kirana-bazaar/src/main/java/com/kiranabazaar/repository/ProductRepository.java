@@ -4,9 +4,12 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.kiranabazaar.entity.Product;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 	
-	List<Product> findByNameContainingIgnoreCase(String keyword);
+	Page<Product> findByNameContainingIgnoreCase(String keyword, Pageable pageable);
 
 }
