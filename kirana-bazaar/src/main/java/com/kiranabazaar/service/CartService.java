@@ -51,7 +51,7 @@ public class CartService {
 
 		// Check if product already exists in cart
 		Optional<CartItem> existingItem = cart.getItems().stream()
-				.filter(item -> item.getProduct().getId().equals(product))
+				.filter(item -> item.getProduct().getId().equals(productId))
 				.findFirst();
 		
 		if(existingItem.isPresent()) {
