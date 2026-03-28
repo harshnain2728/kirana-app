@@ -2,6 +2,7 @@ package com.kiranabazaar.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -14,20 +15,29 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        http
-            .cors(cors -> {})   // enable CORS
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/users/register").permitAll()
-                .requestMatchers("/api/users/login").permitAll()
-                .anyRequest().authenticated()
-            )
-            .httpBasic(Customizer.withDefaults()); // enable Basic Auth for Testing the Product API through Postman  
-        
+    	 http
+         .csrf(csrf -> csrf.disable())
+         .cors(cors -> cors.configurationSource(request -> {
+             var config = new org.springframework.web.cors.CorsConfiguration();
 
-        return http.build();
-    }
+             config.setAllowedOrigins(java.util.List.of("http://localhost:5173"));
+             config.setAllowedMethods(java.util.List.of("GET","POST","PUT","DELETE","OPTIONS"));
+             config.setAllowedHeaders(java.util.List.of("*"));
+             config.setAllowCredentials(true);
 
+             return config;
+         }))
+         .authorizeHttpRequests(auth -> auth
+        		    .requestMatchers("/api/users/register", "/api/users/login").permitAll()
+
+        		    // ✅ ADD THIS
+        		    .requestMatchers("/api/products/**").permitAll()
+
+        		    .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+        		    .anyRequest().authenticated()
+        		);
+    return http.build();
+}
     // Convert raw password to Hashed and save to db then while login Spring compares raw input vs hashed password
     @Bean
     public PasswordEncoder passwordEncoder() {

@@ -25,13 +25,15 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody User user) {
-
+    	
+    	System.out.println("REGISTER HIT: " + user.getEmail());
+    	
         userService.register(user);
 
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(new ApiResponse(true, "Account created successfully"));
     }
-
+    
     // Login
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@RequestBody User user) {
