@@ -44,6 +44,16 @@ export default function Checkout() {
       return;
     }
 
+    // ── Get userId from localStorage ──
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const userId = user?.id;
+
+    if (!userId) {
+      setErrors({ submit: "Session expired. Please login again." });
+      return;
+    
+    }
+
     setLoading(true);
     try {
       const orderData = {
@@ -52,7 +62,8 @@ export default function Checkout() {
         total: grandTotal,
         paymentMethod,
       };
-      const res = await api.post("/orders", orderData);
+       // ── Send userId as query param ──
+      const res = await api.post(`/orders?userId=${userId}`, orderData);
       console.log(res.data);
       clearCart();
       navigate("/success");

@@ -3,12 +3,16 @@ package com.kiranabazaar.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
+import java.util.List;
 
-// Create database tables for the java object and Springboot uses Spring JPA/Hibernates to map this class to a table
 @Entity
 @Table(name = "users")
-public class User {
+public class User implements UserDetails {        // ← added implements UserDetails
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,54 +25,58 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-
     @NotBlank
     private String password;
 
     private String role; // USER, ADMIN
-    
+
+    @Transient
+    private String token;
+
     public User() {}
 
     // ===== Getters & Setters =====
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Long getId() {
-        return id;
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+
+    public String getToken() { return token; }
+    public void setToken(String token) { this.token = token; }
+
+    // ===== UserDetails required methods =====
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (role != null && !role.isEmpty()) {
+            return List.of(new SimpleGrantedAuthority("ROLE_" + role)); // e.g. ROLE_USER, ROLE_ADMIN
+        }
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @Override
+    public String getUsername() {
+        return email;  // email is used as the unique identifier
     }
 
-    public String getName() {
-        return name;
-    }
+    @Override
+    public boolean isAccountNonExpired() { return true; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    @Override
+    public boolean isAccountNonLocked() { return true; }
 
-    public String getEmail() {
-        return email;
-    }
+    @Override
+    public boolean isCredentialsNonExpired() { return true; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
+    @Override
+    public boolean isEnabled() { return true; }
 }

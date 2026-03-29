@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../config/axios";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const [email, setEmail]       = useState("");
@@ -20,15 +21,26 @@ export default function Login() {
     try {
       const res = await api.post("/users/login", { email, password });
       const response = res.data;
+
+      console.log("Full response:", response);
+      console.log("User data:", response.data);
+      console.log("Token:", response.data?.token);
+
+
+
+
       if (response.success) {
-        login(response.data, response.data.token);
+        const userData  = response.data;              // User object
+        const authToken = response.data?.token;       // token inside User object
+
+        login(userData, authToken);
         setIsError(false);
         navigate("/");
       } else {
         setIsError(true);
         setMessage(response.message || "Invalid credentials");
       }
-    } catch (error) {
+    } catch {
       setIsError(true);
       setMessage("Something went wrong. Please try again.");
     } finally {

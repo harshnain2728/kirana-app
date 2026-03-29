@@ -1,5 +1,6 @@
 package com.kiranabazaar.service;
 
+import com.kiranabazaar.config.JwtService;
 import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,11 +19,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public UserService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     // Register
@@ -53,7 +57,9 @@ public class UserService {
         if (!match) {
             return null;
         }
-
+        
+        String token = jwtService.generateToken(user);
+        user.setToken(token);
         return user;
     }
 

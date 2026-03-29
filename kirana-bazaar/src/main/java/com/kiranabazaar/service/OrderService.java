@@ -3,9 +3,8 @@ package com.kiranabazaar.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Map;
 import org.springframework.stereotype.Service;
-
 import com.kiranabazaar.entity.*;
 import com.kiranabazaar.repository.*;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,62 +13,62 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
     private final UserRepository userRepository;
-
     private final OrderRepository orderRepository;
-    private final CartRepository cartRepository;
+    private final ProductRepository productRepository;
 
     public OrderService(OrderRepository orderRepository,
-                        CartRepository cartRepository,
-                        UserRepository userRepository) {
+                        UserRepository userRepository,
+                        ProductRepository productRepository) {
         this.orderRepository = orderRepository;
-        this.cartRepository = cartRepository;
         this.userRepository = userRepository;
+        this.productRepository = productRepository;
     }
 
-    // ✅ Place Order
     @Transactional
-    public Order placeOrder(Long userId) {
-    	
-    	User user = userRepository.findById(userId)
-    			.orElseThrow(() -> new RuntimeException("User not found"));
+    public Order placeOrder(Long userId, Map<String, Object> orderRequest) {
 
-        Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Cart not found"));
-        
-        if(cart.getItems().isEmpty()) {
-        	throw new RuntimeException("Cart is Empty");
+        // ── Get user ──
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // ── Get items from frontend request ──
+        List<Map<String, Object>> items =
+                (List<Map<String, Object>>) orderRequest.get("items");
+
+        if (items == null || items.isEmpty()) {
+            throw new RuntimeException("No items in order");
         }
-        
+
+        // ── Build order ──
         Order order = new Order();
         order.setUser(user);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus("CREATED");
 
         List<OrderItem> orderItems = new ArrayList<>();
-
         double total = 0;
 
-        for (CartItem cartItem : cart.getItems()) {
+        for (Map<String, Object> item : items) {
+            Long productId = Long.valueOf(item.get("id").toString());
+            int quantity   = Integer.parseInt(item.get("quantity").toString());
+            double price   = Double.parseDouble(item.get("price").toString());
 
-            OrderItem item = new OrderItem();
-            item.setOrder(order);
-            item.setProduct(cartItem.getProduct());
-            item.setQuantity(cartItem.getQuantity());
-            item.setPrice(cartItem.getProduct().getPrice());
-            
-            total += item.getPrice() * item.getQuantity();
-            
-            orderItems.add(item);
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(order);
+            orderItem.setProduct(product);
+            orderItem.setQuantity(quantity);
+            orderItem.setPrice(price);
+
+            total += price * quantity;
+            orderItems.add(orderItem);
         }
-        
+
         order.setItems(orderItems);
         order.setTotalAmount(total);
-        
-        // Clear cart after order
-        cart.getItems().clear();
-        cartRepository.save(cart);
-        
+
         return orderRepository.save(order);
     }
 }
-           
