@@ -22,14 +22,18 @@ public class JwtService {
     // Token valid for 24 hours
     private static final long EXPIRATION_MS = 1000 * 60 * 60 * 24;
 
-    // ── Generate token ──
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
-    }
-
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+    	
+    	Map<String, Object> claims = new HashMap<>();
+    	
+    	claims.put("role", userDetails.getAuthorities()
+    			.stream()
+    			.findFirst()
+    			.get()
+    			.getAuthority());
+    	
         return Jwts.builder()
-                .setClaims(extraClaims)
+                .setClaims(claims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))

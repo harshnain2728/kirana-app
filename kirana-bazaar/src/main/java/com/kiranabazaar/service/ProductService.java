@@ -70,4 +70,17 @@ public class ProductService {
 
         return productRepository.findAll(pageable);
     }
+    
+    
+    public Product updateStock(Long id, int quantity) {
+    	Product product = productRepository.findById(id)
+    			.orElseThrow(() -> new RuntimeException("Product not found"));
+
+    	product.setStock(quantity);
+    	return productRepository.save(product);
+    }
+    
+    public List<Product> getLowStockProducts(){
+    	return productRepository.findByStockLessThan(5);
+    }
 }

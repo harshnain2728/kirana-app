@@ -28,13 +28,14 @@ public class User implements UserDetails {        // ← added implements UserDe
     @NotBlank
     private String password;
 
-    private String role; // USER, ADMIN
+    @Enumerated(EnumType.STRING)
+    private Role role; // USER, ADMIN
 
     @Transient
     private String token;
 
     public User() {}
-
+    
     // ===== Getters & Setters =====
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -48,8 +49,8 @@ public class User implements UserDetails {        // ← added implements UserDe
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public Role getRole() {return role;}
+    public void setRole(Role role) { this.role= role;} 
 
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
@@ -57,11 +58,9 @@ public class User implements UserDetails {        // ← added implements UserDe
     // ===== UserDetails required methods =====
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (role != null && !role.isEmpty()) {
-            return List.of(new SimpleGrantedAuthority("ROLE_" + role)); // e.g. ROLE_USER, ROLE_ADMIN
+            return List.of(new SimpleGrantedAuthority("ROLE_" + role.name())
+            		); 
         }
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
-    }
 
     @Override
     public String getUsername() {
