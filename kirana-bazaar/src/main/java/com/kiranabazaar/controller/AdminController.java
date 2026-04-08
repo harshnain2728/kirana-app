@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,6 +16,7 @@ import com.kiranabazaar.entity.Order;
 import com.kiranabazaar.entity.Product;
 import com.kiranabazaar.service.OrderService;
 import com.kiranabazaar.service.ProductService;
+
 
 @RestController
 @RequestMapping("/api/admin")
@@ -34,6 +36,7 @@ public class AdminController {
 	
 	// 2. update order status
 	@PutMapping("/orders/{id}/status")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Order> updateOrderStatus(
 			@PathVariable Long id,
 			@RequestParam String status){

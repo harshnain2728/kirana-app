@@ -29,6 +29,7 @@ public class User implements UserDetails {        // ← added implements UserDe
     private String password;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role; // USER, ADMIN
 
     @Transient
@@ -56,11 +57,20 @@ public class User implements UserDetails {        // ← added implements UserDe
     public void setToken(String token) { this.token = token; }
 
     // ===== UserDetails required methods =====
+    
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-            return List.of(new SimpleGrantedAuthority("ROLE_" + role.name())
-            		); 
-        }
+
+    	if (role == null) {
+    		System.out.println("Role is NULL for user: " + email);
+    		return List.of();
+    	}
+    	
+
+        return List.of(
+            new SimpleGrantedAuthority("ROLE_" + role.name())
+        );
+    }
 
     @Override
     public String getUsername() {

@@ -69,7 +69,14 @@ export default function Checkout() {
       navigate("/success");
     } catch (error) {
       console.error("Order failed", error);
-      setErrors({ submit: "Order failed. Please try again." });
+
+      if(error.response && error.response.data){
+        alert(error.response.data.message || "Order failed due to stock issue"
+        );
+      }
+      else{
+        alert("Order failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -578,7 +585,6 @@ export default function Checkout() {
                     ].map((opt) => (
                       <label
                         key={opt.value}
-                        className={`kb-payment-option ${paymentMethod === opt.value ? "selected" : ""}`}
                       >
                         <input
                           type="radio"

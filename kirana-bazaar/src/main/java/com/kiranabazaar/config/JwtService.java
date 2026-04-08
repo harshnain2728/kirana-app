@@ -30,7 +30,8 @@ public class JwtService {
     			.stream()
     			.findFirst()
     			.get()
-    			.getAuthority());
+    			.getAuthority()
+    			.replace("ROLE_", ""));
     	
         return Jwts.builder()
                 .setClaims(claims)

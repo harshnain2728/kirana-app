@@ -2,7 +2,6 @@ package com.kiranabazaar.service;
 
 import org.springframework.data.domain.Pageable;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -19,68 +18,104 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
+    // =========================
     // Add Product
+    // =========================
+
     public Product addProduct(Product product) {
         return productRepository.save(product);
     }
 
+    // =========================
     // Get All Products
+    // =========================
+
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
+    // =========================
     // Get Product By Id
-    public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+    // =========================
+
+    public Product getProductById(Long id) {
+
+        return productRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Product not found with id: " + id));
     }
 
+    // =========================
     // Update Product
-    public Product updateProduct(Long id, Product updatedProduct) {
+    // =========================
 
-        Product product = productRepository.findById(id)
-        		.orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+    public Product updateProduct(Long id,
+                                 Product updatedProduct) {
 
-            product.setName(updatedProduct.getName());
-            product.setDescription(updatedProduct.getDescription());
-            product.setPrice(updatedProduct.getPrice());
-            product.setStock(updatedProduct.getStock());
-            product.setCategory(updatedProduct.getCategory());
-            product.setImageUrl(updatedProduct.getImageUrl());
+        Product product = getProductById(id);
 
-            return productRepository.save(product);
-        }
+        product.setName(updatedProduct.getName());
+        product.setDescription(updatedProduct.getDescription());
+        product.setPrice(updatedProduct.getPrice());
+        product.setStock(updatedProduct.getStock());
+        product.setCategory(updatedProduct.getCategory());
+        product.setImageUrl(updatedProduct.getImageUrl());
 
-    
-    // Delete Product
-    public void deleteProduct(Long id) {
-    	
-    	Product product = productRepository.findById(id)
-    			.orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
-    		
-    	productRepository.delete(product);
+        return productRepository.save(product);
     }
-    
-    
-    // Search product using the keyword like "rice" (Search + Pagination)
-    public Page<Product> getProducts(String keyword, Pageable pageable) {
+
+    // =========================
+    // Delete Product
+    // =========================
+
+    public void deleteProduct(Long id) {
+
+        Product product = getProductById(id);
+
+        productRepository.delete(product);
+    }
+
+    // =========================
+    // Search + Pagination
+    // =========================
+
+    public Page<Product> getProducts(String keyword,
+                                     Pageable pageable) {
 
         if (keyword != null && !keyword.isEmpty()) {
-            return  productRepository.findByNameContainingIgnoreCase(keyword, pageable);
+
+            return productRepository
+                    .findByNameContainingIgnoreCase(
+                            keyword,
+                            pageable
+                    );
         }
 
         return productRepository.findAll(pageable);
     }
-    
-    
-    public Product updateStock(Long id, int quantity) {
-    	Product product = productRepository.findById(id)
-    			.orElseThrow(() -> new RuntimeException("Product not found"));
 
-    	product.setStock(quantity);
-    	return productRepository.save(product);
+    // =========================
+    // Update Stock
+    // =========================
+
+    public Product updateStock(Long id,
+                               int quantity) {
+
+        Product product = getProductById(id);
+
+        product.setStock(quantity);
+
+        return productRepository.save(product);
     }
-    
-    public List<Product> getLowStockProducts(){
-    	return productRepository.findByStockLessThan(5);
+
+    // =========================
+    // Low Stock Products
+    // =========================
+
+    public List<Product> getLowStockProducts() {
+
+        return productRepository
+                .findByStockLessThan(5);
     }
 }
