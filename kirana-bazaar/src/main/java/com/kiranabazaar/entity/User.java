@@ -34,6 +34,8 @@ public class User implements UserDetails {        // ← added implements UserDe
 
     @Transient
     private String token;
+    
+    private String phone;
 
     public User() {}
     
@@ -55,6 +57,9 @@ public class User implements UserDetails {        // ← added implements UserDe
 
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
+    
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
     // ===== UserDetails required methods =====
     

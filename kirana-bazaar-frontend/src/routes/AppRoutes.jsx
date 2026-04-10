@@ -15,7 +15,12 @@ import AdminOrders    from "../pages/admin/AdminOrders";
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
-  return token ? children : <Navigate to="/login" replace />;
+  if (!token) {
+    // ── Save where user was trying to go ──
+    sessionStorage.setItem("redirectAfterLogin", window.location.pathname);
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
 function AdminRoute({ children }) {

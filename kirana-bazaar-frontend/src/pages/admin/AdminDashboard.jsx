@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/axios";
+import api from "../../config/axios";
 
 const NAV_ITEMS = [
   { icon: "📊", label: "Dashboard",  path: "/admin"          },

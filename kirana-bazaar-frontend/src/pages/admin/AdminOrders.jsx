@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../../api/axios";
+import api from "../../config/axios";
 import { AdminLayout } from "./AdminDashboard";
 
 const STATUSES = ["PENDING", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];

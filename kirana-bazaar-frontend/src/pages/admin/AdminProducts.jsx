@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../../api/axios";
+import api from "../../config/axios";
 import { AdminLayout } from "./AdminDashboard";
 
 const EMPTY_FORM = { name: "", price: "", mrp: "", category: "", unit: "", stock: "", description: "", imageUrl: "" };

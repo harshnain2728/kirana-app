@@ -23,8 +23,17 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
+  // Check login before adding 
+  const isLoggedIn = () => !!localStorage.getItem("token");
+
   // 🛒 Add (or increase by 1)
   const addToCart = useCallback((product) => {
+    // Redirect to login if not logged in 
+    if(!isLoggedIn()) {
+      window.location.href = "/login";
+      return;
+    }
+
     setCart((prev) => ({
       ...prev,
       [product.id]: {
@@ -36,6 +45,7 @@ export const CartProvider = ({ children }) => {
 
   // ➕ Increase qty
   const increaseQty = useCallback((id) => {
+    if(!isLoggedIn()) { window.location.href = "/login"; return; }
     setCart((prev) => ({
       ...prev,
       [id]: {

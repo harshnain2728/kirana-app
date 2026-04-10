@@ -22,20 +22,16 @@ export default function Login() {
       const res = await api.post("/users/login", { email, password });
       const response = res.data;
 
-      console.log("Full response:", response);
-      console.log("User data:", response.data);
-      console.log("Token:", response.data?.token);
-
-
-
-
       if (response.success) {
-        const userData  = response.data;              // User object
-        const authToken = response.data?.token;       // token inside User object
-
+        const userData  = response.data;
+        const authToken = response.data?.token;
         login(userData, authToken);
         setIsError(false);
-        navigate("/");
+
+        // ── Go back to where user was trying to go ──
+        const redirect = sessionStorage.getItem("redirectAfterLogin") || "/";
+        sessionStorage.removeItem("redirectAfterLogin");
+        navigate(redirect);
       } else {
         setIsError(true);
         setMessage(response.message || "Invalid credentials");
@@ -47,6 +43,8 @@ export default function Login() {
       setLoading(false);
     }
   };
+      
+
 
   return (
     <>

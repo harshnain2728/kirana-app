@@ -1,6 +1,8 @@
 package com.kiranabazaar.controller;
 
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,8 @@ import com.kiranabazaar.service.UserService;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
 
@@ -58,4 +62,35 @@ public class UserController {
         return user.map(ResponseEntity::ok)
                    .orElse(ResponseEntity.notFound().build());
     }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse> updateProfile(
+            @PathVariable Long id,
+            @RequestBody User updatedUser) {
+        try {
+            Optional<User> existing = userService.getUserById(id);
+            if (existing.isEmpty()) {
+                return ResponseEntity.status(404)
+                    .body(new ApiResponse(false, "User not found"));
+            }
+            User user = existing.get();
+            // Only update allowed fields
+            if (updatedUser.getName()  != null) user.setName(updatedUser.getName());
+            if (updatedUser.getEmail() != null) user.setEmail(updatedUser.getEmail());
+            if (updatedUser.getPhone() != null) user.setPhone(updatedUser.getPhone());
+
+            userService.save(user);
+            log.info("Profile updated for userId: {}", id);
+            return ResponseEntity.ok(new ApiResponse(true, "Profile updated", user));
+        } catch (Exception e) {
+            log.error("Profile update failed for userId: {} | {}", id, e.getMessage());
+            return ResponseEntity.status(500)
+                .body(new ApiResponse(false, "Update failed"));
+        }
+    }
+    
+    
+    
+    
+    
 }

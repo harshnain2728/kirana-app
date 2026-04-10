@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import api from "../config/axios";
 
 const STATUS_CONFIG = {
   PENDING:    { label: "Pending",    color: "#f59e0b", bg: "#fffbeb", icon: "🕐" },
@@ -23,7 +23,15 @@ export default function Orders() {
   const [filter, setFilter]         = useState("ALL");
 
   useEffect(() => {
-    api.get("/orders/my")
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const userId = storedUser?.id;
+
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
+    api.get(`/orders/my?userId=${userId}`)
       .then((res) => {
         const data = res.data?.data || res.data?.content || res.data || [];
         setOrders(Array.isArray(data) ? data : []);

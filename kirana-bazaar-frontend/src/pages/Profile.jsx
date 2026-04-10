@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import api from "../api/axios";
+import api from "../config/axios";
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -16,21 +16,34 @@ export default function Profile() {
   const [form, setForm]           = useState({ name: "", email: "", phone: "" });
   const [activeTab, setActiveTab] = useState("profile");
 
-  useEffect(() => {
-    api.get("/users/profile")
-      .then((res) => {
-        const data = res.data?.data || res.data;
-        setProfile(data);
-        setForm({ name: data.name || "", email: data.email || "", phone: data.phone || "" });
-      })
-      .catch(() => {
-        // fallback to localStorage data
-        if (user) {
-          setProfile(user);
-          setForm({ name: user.name || "", email: user.email || "", phone: user.phone || "" });
-        }
-      })
-      .finally(() => setLoading(false));
+useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    if (storedUser?.id) {
+      api.get(`/users/${storedUser.id}`)
+        .then((res) => {
+          const data = res.data?.data || res.data;
+          setProfile(data);
+          setForm({
+            name:  data.name  || "",
+            email: data.email || "",
+            phone: data.phone || "",
+          });
+        })
+        .catch(() => {
+          // fallback to localStorage
+          setProfile(storedUser);
+          setForm({
+            name:  storedUser.name  || "",
+            email: storedUser.email || "",
+            phone: storedUser.phone || "",
+          });
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setProfile(storedUser);
+      setLoading(false);
+    }
   }, [user]);
 
   const handleChange = (e) => {
@@ -42,9 +55,14 @@ export default function Profile() {
     setSaving(true);
     setMessage("");
     try {
-      await api.put("/users/profile", form);
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      await api.put(`/users/${storedUser.id}`, form);
       setProfile({ ...profile, ...form });
+
+      // ── Update localStorage too ──
       localStorage.setItem("userName", form.name);
+      localStorage.setItem("user", JSON.stringify({ ...storedUser, ...form }));
+
       setIsError(false);
       setMessage("Profile updated successfully!");
       setEditing(false);
@@ -55,6 +73,8 @@ export default function Profile() {
       setSaving(false);
     }
   };
+
+  
 
   const initials = (profile?.name || user?.name || "U")
     .split(" ")
