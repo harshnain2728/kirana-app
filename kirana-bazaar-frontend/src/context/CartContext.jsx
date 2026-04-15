@@ -1,39 +1,36 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import toast from "react-hot-toast";
 
 const CartContext = createContext();
-
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState({});
-
-  // ✅ Load from localStorage on mount
-  useEffect(() => {
+  // ✅ Lazy initializer — reads localStorage once, avoids double render
+  const [cart, setCart] = useState(() => {
     try {
       const savedCart = localStorage.getItem("cart");
-      if (savedCart) setCart(JSON.parse(savedCart));
-    } catch (e) {
-      // Corrupted localStorage — start fresh
+      return savedCart ? JSON.parse(savedCart) : {};
+    } catch {
       localStorage.removeItem("cart");
+      return {};
     }
-  }, []);
+  });
 
   // ✅ Sync to localStorage on every change
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  // Check login before adding 
-  const isLoggedIn = () => !!localStorage.getItem("token");
+  // ✅ Stable auth check — safe to use in dependency arrays
+  const isLoggedIn = useCallback(() => !!localStorage.getItem("token"), []);
 
   // 🛒 Add (or increase by 1)
   const addToCart = useCallback((product) => {
-    // Redirect to login if not logged in 
-    if(!isLoggedIn()) {
+    if (!isLoggedIn()) {
+      toast.error("Please log in to add items to your cart.");
       window.location.href = "/login";
       return;
     }
-
     setCart((prev) => ({
       ...prev,
       [product.id]: {
@@ -41,66 +38,71 @@ export const CartProvider = ({ children }) => {
         quantity: (prev[product.id]?.quantity || 0) + 1,
       },
     }));
-  }, []);
+    toast.success(`${product.name} added to cart!`);
+  }, [isLoggedIn]);
 
   // ➕ Increase qty
   const increaseQty = useCallback((id) => {
-    if(!isLoggedIn()) { window.location.href = "/login"; return; }
-    setCart((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        quantity: prev[id].quantity + 1,
-      },
-    }));
-  }, []);
+    if (!isLoggedIn()) {
+      toast.error("Please log in to continue.");
+      window.location.href = "/login";
+      return;
+    }
+    setCart((prev) => {
+      if (!prev[id]) return prev; // ✅ guard against missing item
+      return {
+        ...prev,
+        [id]: { ...prev[id], quantity: prev[id].quantity + 1 },
+      };
+    });
+  }, [isLoggedIn]);
 
   // ➖ Decrease qty (removes item if qty reaches 0)
   const decreaseQty = useCallback((id) => {
     setCart((prev) => {
-      const updated = { ...prev };
-      if (!updated[id]) return prev; // guard
-      if (updated[id].quantity === 1) {
-        delete updated[id];
-      } else {
-        updated[id] = { ...updated[id], quantity: updated[id].quantity - 1 };
+      if (!prev[id]) return prev;
+      if (prev[id].quantity === 1) {
+        toast(`${prev[id].name} removed from cart.`, { icon: "🗑️" });
+        const { [id]: _, ...rest } = prev; // ✅ immutable delete
+        return rest;
       }
-      return updated;
+      return { ...prev, [id]: { ...prev[id], quantity: prev[id].quantity - 1 } };
     });
   }, []);
 
-  // ❌ Remove item entirely (regardless of qty)
+  // ❌ Remove item entirely
   const removeFromCart = useCallback((id) => {
     setCart((prev) => {
-      const updated = { ...prev };
-      delete updated[id];
-      return updated;
+      if (!prev[id]) return prev; // ✅ skip re-render if already gone
+      toast(`${prev[id].name} removed from cart.`, { icon: "🗑️" });
+      const { [id]: _, ...rest } = prev; // ✅ immutable delete
+      return rest;
     });
   }, []);
 
   // 🧹 Clear entire cart
-  const clearCart = useCallback(() => setCart({}), []);
+  const clearCart = useCallback(() => {
+    setCart({});
+    toast.success("Cart cleared.");
+  }, []);
 
-  // 📊 Derived values (computed once, not re-derived on every consumer render)
-  const cartCount = Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
-  const cartTotal = Object.values(cart).reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const cartItems = Object.values(cart); // array form — useful for Cart page & Checkout
+  // ✅ useMemo — recomputes only when cart changes
+  const cartItems = useMemo(() => Object.values(cart), [cart]);
+  const cartCount = useMemo(() => cartItems.reduce((sum, item) => sum + item.quantity, 0), [cartItems]);
+  const cartTotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItems]);
 
-  return (
-    <CartContext.Provider
-      value={{
-        cart,           // raw object — keyed by product.id
-        cartItems,      // array — easier to map over
-        cartCount,      // total item count for Header badge
-        cartTotal,      // total price for Cart/Checkout
-        addToCart,
-        increaseQty,
-        decreaseQty,
-        removeFromCart, // removes item fully (used in Cart page)
-        clearCart,      // used after order is placed
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  );
+  // ✅ Memoized context value — prevents unnecessary consumer re-renders
+  const value = useMemo(() => ({
+    cart,
+    cartItems,
+    cartCount,
+    cartTotal,
+    addToCart,
+    increaseQty,
+    decreaseQty,
+    removeFromCart,
+    clearCart,
+  }), [cart, cartItems, cartCount, cartTotal, addToCart, increaseQty, decreaseQty, removeFromCart, clearCart]);
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };

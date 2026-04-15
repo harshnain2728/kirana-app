@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useCart } from "../context/CartContext";
 import api from "../config/axios";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Checkout() {
   const { cartItems, cartTotal, cartCount, clearCart } = useCart();
@@ -23,17 +24,17 @@ export default function Checkout() {
 
   const handleChange = (e) => {
     setAddress({ ...address, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" }); // clear error on type
+    setErrors({ ...errors, [e.target.name]: "" });
   };
 
   // ── Validation ──
   const validate = () => {
     const newErrors = {};
-    if (!address.name.trim())                          newErrors.name    = "Full name is required";
-    if (!/^[6-9]\d{9}$/.test(address.phone))          newErrors.phone   = "Enter a valid 10-digit phone";
-    if (!address.street.trim())                        newErrors.street  = "Street address is required";
-    if (!address.city.trim())                          newErrors.city    = "City is required";
-    if (!/^\d{6}$/.test(address.pincode))              newErrors.pincode = "Enter a valid 6-digit pincode";
+    if (!address.name.trim())                 newErrors.name    = "Full name is required";
+    if (!/^[6-9]\d{9}$/.test(address.phone)) newErrors.phone   = "Enter a valid 10-digit phone";
+    if (!address.street.trim())               newErrors.street  = "Street address is required";
+    if (!address.city.trim())                 newErrors.city    = "City is required";
+    if (!/^\d{6}$/.test(address.pincode))     newErrors.pincode = "Enter a valid 6-digit pincode";
     return newErrors;
   };
 
@@ -41,6 +42,7 @@ export default function Checkout() {
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      toast.error("Please fix the errors before placing your order.");
       return;
     }
 
@@ -50,8 +52,8 @@ export default function Checkout() {
 
     if (!userId) {
       setErrors({ submit: "Session expired. Please login again." });
+      toast.error("Session expired. Please login again.");
       return;
-    
     }
 
     setLoading(true);
@@ -62,21 +64,18 @@ export default function Checkout() {
         total: grandTotal,
         paymentMethod,
       };
-       // ── Send userId as query param ──
+      // ── Send userId as query param ──
       const res = await api.post(`/orders?userId=${userId}`, orderData);
       console.log(res.data);
       clearCart();
+      toast.success("Order placed successfully! 🎉");
       navigate("/success");
     } catch (error) {
       console.error("Order failed", error);
-
-      if(error.response && error.response.data){
-        alert(error.response.data.message || "Order failed due to stock issue"
-        );
-      }
-      else{
-        alert("Order failed. Please try again.");
-      }
+      const message =
+        error.response?.data?.message || "Order failed. Please try again.";
+      setErrors({ submit: message }); // ✅ show inline too
+      toast.error(message);           // ✅ replaced alert() with toast
     } finally {
       setLoading(false);
     }
@@ -140,13 +139,8 @@ export default function Checkout() {
           min-height: 100vh;
           padding: 28px 16px 60px;
         }
+        .kb-checkout-wrapper { max-width: 960px; margin: 0 auto; }
 
-        .kb-checkout-wrapper {
-          max-width: 960px;
-          margin: 0 auto;
-        }
-
-        /* Title */
         .kb-checkout-title {
           font-family: 'Syne', sans-serif;
           font-size: 24px;
@@ -158,45 +152,20 @@ export default function Checkout() {
           gap: 10px;
         }
 
-        /* Steps bar */
-        .kb-steps {
-          display: flex;
-          align-items: center;
-          gap: 0;
-          margin-bottom: 28px;
-        }
-        .kb-step {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--kb-muted);
-        }
+        /* Steps */
+        .kb-steps { display: flex; align-items: center; gap: 0; margin-bottom: 28px; }
+        .kb-step  { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--kb-muted); }
         .kb-step.active { color: var(--kb-green); }
         .kb-step.done   { color: var(--kb-green); }
         .kb-step-num {
-          width: 26px;
-          height: 26px;
-          border-radius: 50%;
-          background: var(--kb-border);
-          color: var(--kb-muted);
-          font-size: 12px;
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
+          width: 26px; height: 26px; border-radius: 50%;
+          background: var(--kb-border); color: var(--kb-muted);
+          font-size: 12px; font-weight: 800;
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
         .kb-step.active .kb-step-num { background: var(--kb-green); color: #fff; }
         .kb-step.done   .kb-step-num { background: var(--kb-green-light); color: var(--kb-green); }
-        .kb-step-line {
-          flex: 1;
-          height: 2px;
-          background: var(--kb-border);
-          margin: 0 8px;
-          max-width: 48px;
-        }
+        .kb-step-line { flex: 1; height: 2px; background: var(--kb-border); margin: 0 8px; max-width: 48px; }
 
         /* Layout */
         .kb-checkout-grid {
@@ -205,277 +174,125 @@ export default function Checkout() {
           gap: 20px;
           align-items: start;
         }
-        @media (max-width: 768px) {
-          .kb-checkout-grid { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 768px) { .kb-checkout-grid { grid-template-columns: 1fr; } }
 
         /* Card */
-        .kb-card {
-          background: #fff;
-          border-radius: 16px;
-          border: 1.5px solid var(--kb-border);
-          margin-bottom: 16px;
-          overflow: hidden;
-        }
+        .kb-card { background: #fff; border-radius: 16px; border: 1.5px solid var(--kb-border); margin-bottom: 16px; overflow: hidden; }
         .kb-card-head {
-          padding: 14px 20px;
-          border-bottom: 1px solid #f0f0f0;
-          display: flex;
-          align-items: center;
-          gap: 10px;
+          padding: 14px 20px; border-bottom: 1px solid #f0f0f0;
+          display: flex; align-items: center; gap: 10px;
         }
         .kb-card-head-icon {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          background: var(--kb-green-light);
-          color: var(--kb-green);
-          font-size: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
+          width: 32px; height: 32px; border-radius: 8px;
+          background: var(--kb-green-light); color: var(--kb-green);
+          font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
-        .kb-card-head h3 {
-          font-size: 15px;
-          font-weight: 700;
-          color: var(--kb-text);
-          margin: 0;
-        }
+        .kb-card-head h3 { font-size: 15px; font-weight: 700; color: var(--kb-text); margin: 0; }
         .kb-card-body { padding: 20px; }
 
         /* Form */
-        .kb-form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 14px;
-        }
+        .kb-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .kb-form-grid .full { grid-column: 1 / -1; }
-
         .kb-field { display: flex; flex-direction: column; gap: 5px; }
         .kb-field label {
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--kb-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+          font-size: 12px; font-weight: 600; color: var(--kb-muted);
+          text-transform: uppercase; letter-spacing: 0.5px;
         }
         .kb-field input {
-          padding: 10px 13px;
-          border: 1.5px solid var(--kb-border);
-          border-radius: 10px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 14px;
-          color: var(--kb-text);
-          outline: none;
-          transition: border-color .2s, box-shadow .2s;
-          background: #fff;
+          padding: 10px 13px; border: 1.5px solid var(--kb-border); border-radius: 10px;
+          font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--kb-text);
+          outline: none; transition: border-color .2s, box-shadow .2s; background: #fff;
         }
-        .kb-field input:focus {
-          border-color: var(--kb-green);
-          box-shadow: 0 0 0 3px rgba(26,158,63,0.1);
-        }
+        .kb-field input:focus { border-color: var(--kb-green); box-shadow: 0 0 0 3px rgba(26,158,63,0.1); }
         .kb-field input.error { border-color: #ef4444; }
-        .kb-field-error {
-          font-size: 11px;
-          color: #ef4444;
-          font-weight: 500;
-        }
+        .kb-field-error { font-size: 11px; color: #ef4444; font-weight: 500; }
 
-        /* Payment options */
-        .kb-payment-options {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
+        /* Payment */
+        .kb-payment-options { display: flex; flex-direction: column; gap: 10px; }
         .kb-payment-option {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 13px 16px;
-          border: 1.5px solid var(--kb-border);
-          border-radius: 12px;
-          cursor: pointer;
+          display: flex; align-items: center; gap: 12px;
+          padding: 13px 16px; border: 1.5px solid var(--kb-border);
+          border-radius: 12px; cursor: pointer;
           transition: border-color .2s, background .2s;
         }
-        .kb-payment-option.selected {
-          border-color: var(--kb-green);
-          background: var(--kb-green-light);
-        }
+        .kb-payment-option.selected { border-color: var(--kb-green); background: var(--kb-green-light); }
         .kb-payment-option input[type="radio"] { accent-color: var(--kb-green); width: 16px; height: 16px; }
         .kb-payment-option-icon { font-size: 22px; }
         .kb-payment-option-label { flex: 1; }
-        .kb-payment-option-label strong {
-          display: block;
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--kb-text);
-        }
-        .kb-payment-option-label span {
-          font-size: 12px;
-          color: var(--kb-muted);
-        }
+        .kb-payment-option-label strong { display: block; font-size: 14px; font-weight: 600; color: var(--kb-text); }
+        .kb-payment-option-label span  { font-size: 12px; color: var(--kb-muted); }
         .kb-payment-badge {
-          font-size: 10px;
-          font-weight: 700;
-          background: var(--kb-green);
-          color: #fff;
-          padding: 2px 8px;
-          border-radius: 20px;
+          font-size: 10px; font-weight: 700;
+          background: var(--kb-green); color: #fff;
+          padding: 2px 8px; border-radius: 20px;
         }
 
-        /* Order items list */
-        .kb-checkout-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px 0;
-          border-bottom: 1px solid #f7f8fa;
-        }
+        /* Order items */
+        .kb-checkout-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f7f8fa; }
         .kb-checkout-item:last-child { border-bottom: none; }
         .kb-checkout-item-img {
-          width: 46px;
-          height: 46px;
-          border-radius: 8px;
-          background: #f3f4f6;
-          object-fit: cover;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 22px;
-          overflow: hidden;
-          flex-shrink: 0;
+          width: 46px; height: 46px; border-radius: 8px; background: #f3f4f6;
+          object-fit: cover; display: flex; align-items: center; justify-content: center;
+          font-size: 22px; overflow: hidden; flex-shrink: 0;
         }
         .kb-checkout-item-img img { width: 100%; height: 100%; object-fit: cover; }
-        .kb-checkout-item-info { flex: 1; min-width: 0; }
-        .kb-checkout-item-name {
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--kb-text);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .kb-checkout-item-qty { font-size: 12px; color: var(--kb-muted); }
+        .kb-checkout-item-info  { flex: 1; min-width: 0; }
+        .kb-checkout-item-name  { font-size: 13px; font-weight: 600; color: var(--kb-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .kb-checkout-item-qty   { font-size: 12px; color: var(--kb-muted); }
         .kb-checkout-item-price { font-size: 14px; font-weight: 700; color: var(--kb-text); }
 
-        /* Summary right panel */
+        /* Summary */
         .kb-summary-panel {
-          background: #fff;
-          border-radius: 16px;
-          border: 1.5px solid var(--kb-border);
-          padding: 20px;
-          position: sticky;
-          top: 90px;
+          background: #fff; border-radius: 16px; border: 1.5px solid var(--kb-border);
+          padding: 20px; position: sticky; top: 90px;
         }
-        .kb-summary-panel h3 {
-          font-size: 13px;
-          font-weight: 800;
-          color: var(--kb-text);
-          margin: 0 0 16px;
-          text-transform: uppercase;
-          letter-spacing: 0.6px;
-        }
-        .kb-summary-line {
-          display: flex;
-          justify-content: space-between;
-          font-size: 13px;
-          color: #4b5563;
-          margin-bottom: 9px;
-        }
+        .kb-summary-panel h3 { font-size: 13px; font-weight: 800; color: var(--kb-text); margin: 0 0 16px; text-transform: uppercase; letter-spacing: 0.6px; }
+        .kb-summary-line { display: flex; justify-content: space-between; font-size: 13px; color: #4b5563; margin-bottom: 9px; }
         .kb-summary-line.green { color: var(--kb-green); font-weight: 600; }
         .kb-summary-divider { height: 1px; background: #f0f0f0; margin: 12px 0; }
-        .kb-summary-total {
-          display: flex;
-          justify-content: space-between;
-          font-size: 18px;
-          font-weight: 800;
-          color: var(--kb-text);
-          margin-bottom: 6px;
-        }
-        .kb-summary-note {
-          font-size: 11px;
-          color: var(--kb-muted);
-          margin-bottom: 18px;
-        }
+        .kb-summary-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: var(--kb-text); margin-bottom: 6px; }
+        .kb-summary-note { font-size: 11px; color: var(--kb-muted); margin-bottom: 18px; }
 
-        /* Place order button */
+        /* Button */
         .kb-place-btn {
-          width: 100%;
-          padding: 14px;
-          background: var(--kb-green);
-          color: #fff;
-          border: none;
-          border-radius: 12px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 15px;
-          font-weight: 800;
-          cursor: pointer;
-          transition: background .2s, transform .15s, box-shadow .2s;
+          width: 100%; padding: 14px;
+          background: var(--kb-green); color: #fff; border: none; border-radius: 12px;
+          font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 800;
+          cursor: pointer; transition: background .2s, transform .15s, box-shadow .2s;
           box-shadow: 0 4px 16px rgba(26,158,63,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          letter-spacing: 0.3px;
+          display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 0.3px;
         }
-        .kb-place-btn:hover:not(:disabled) { background: var(--kb-green-dark); box-shadow: 0 6px 22px rgba(26,158,63,0.38); }
+        .kb-place-btn:hover:not(:disabled)  { background: var(--kb-green-dark); box-shadow: 0 6px 22px rgba(26,158,63,0.38); }
         .kb-place-btn:active:not(:disabled) { transform: scale(0.98); }
         .kb-place-btn:disabled { background: #9ca3af; box-shadow: none; cursor: not-allowed; }
 
         .kb-spinner {
           width: 18px; height: 18px;
-          border: 2px solid rgba(255,255,255,0.4);
-          border-top-color: #fff;
-          border-radius: 50%;
-          animation: kb-spin .7s linear infinite;
-          flex-shrink: 0;
+          border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+          border-radius: 50%; animation: kb-spin .7s linear infinite; flex-shrink: 0;
         }
         @keyframes kb-spin { to { transform: rotate(360deg); } }
 
         .kb-submit-error {
-          margin-top: 12px;
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          color: #dc2626;
-          padding: 10px 14px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
-          text-align: center;
+          margin-top: 12px; background: #fef2f2; border: 1px solid #fecaca;
+          color: #dc2626; padding: 10px 14px; border-radius: 10px;
+          font-size: 13px; font-weight: 500; text-align: center;
         }
-
         .kb-safe-row {
-          margin-top: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          font-size: 12px;
-          color: var(--kb-muted);
+          margin-top: 14px; display: flex; align-items: center;
+          justify-content: center; gap: 6px; font-size: 12px; color: var(--kb-muted);
         }
-
-        /* Delivery badge */
         .kb-delivery-badge {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: var(--kb-green-light);
-          border-radius: 10px;
-          padding: 10px 14px;
-          margin-bottom: 16px;
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--kb-green-dark);
+          display: flex; align-items: center; gap: 8px;
+          background: var(--kb-green-light); border-radius: 10px; padding: 10px 14px;
+          margin-bottom: 16px; font-size: 13px; font-weight: 600; color: var(--kb-green-dark);
         }
       `}</style>
 
       <div className="kb-checkout-page">
         <div className="kb-checkout-wrapper">
 
-          <div className="kb-checkout-title">
-            🧾 Checkout
-          </div>
+          <div className="kb-checkout-title">🧾 Checkout</div>
 
           {/* Steps */}
           <div className="kb-steps">
@@ -579,12 +396,15 @@ export default function Checkout() {
                 <div className="kb-card-body">
                   <div className="kb-payment-options">
                     {[
-                      { value: "COD",  icon: "💵", label: "Cash on Delivery",  sub: "Pay when your order arrives", badge: null },
-                      { value: "UPI",  icon: "📱", label: "UPI",               sub: "GPay, PhonePe, Paytm & more", badge: "Instant" },
+                      { value: "COD",  icon: "💵", label: "Cash on Delivery",   sub: "Pay when your order arrives", badge: null },
+                      { value: "UPI",  icon: "📱", label: "UPI",                sub: "GPay, PhonePe, Paytm & more", badge: "Instant" },
                       { value: "CARD", icon: "💳", label: "Credit / Debit Card", sub: "Visa, Mastercard, RuPay",    badge: null },
                     ].map((opt) => (
+                      // ✅ Fixed: moved className here; was missing before causing broken styling
                       <label
                         key={opt.value}
+                        className={`kb-payment-option ${paymentMethod === opt.value ? "selected" : ""}`}
+                        onClick={() => setPaymentMethod(opt.value)}
                       >
                         <input
                           type="radio"
@@ -605,7 +425,7 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* Order items (collapsible feel) */}
+              {/* Order items */}
               <div className="kb-card">
                 <div className="kb-card-head">
                   <div className="kb-card-head-icon">🛍️</div>
@@ -624,7 +444,7 @@ export default function Checkout() {
                         <div className="kb-checkout-item-name">{item.name}</div>
                         <div className="kb-checkout-item-qty">Qty: {item.quantity}</div>
                       </div>
-                      <div className="kb-checkout-item-price">₹{item.price * item.quantity}</div>
+                      <div className="kb-checkout-item-price">₹{(item.price * item.quantity).toFixed(2)}</div>
                     </div>
                   ))}
                 </div>
@@ -642,7 +462,7 @@ export default function Checkout() {
 
               <div className="kb-summary-line">
                 <span>Subtotal ({cartCount} items)</span>
-                <span>₹{cartTotal}</span>
+                <span>₹{cartTotal.toFixed(2)}</span>
               </div>
               <div className="kb-summary-line">
                 <span>Delivery fee</span>
@@ -660,11 +480,9 @@ export default function Checkout() {
 
               <div className="kb-summary-total">
                 <span>To Pay</span>
-                <span>₹{grandTotal}</span>
+                <span>₹{grandTotal.toFixed(2)}</span>
               </div>
-              <div className="kb-summary-note">
-                Inclusive of all taxes
-              </div>
+              <div className="kb-summary-note">Inclusive of all taxes</div>
 
               <button
                 className="kb-place-btn"
@@ -673,7 +491,7 @@ export default function Checkout() {
               >
                 {loading
                   ? <><div className="kb-spinner" /> Placing order...</>
-                  : <>Place Order · ₹{grandTotal} →</>
+                  : <>Place Order · ₹{grandTotal.toFixed(2)} →</>
                 }
               </button>
 
@@ -681,9 +499,7 @@ export default function Checkout() {
                 <div className="kb-submit-error">⚠ {errors.submit}</div>
               )}
 
-              <div className="kb-safe-row">
-                🔒 Secure & encrypted checkout
-              </div>
+              <div className="kb-safe-row">🔒 Secure & encrypted checkout</div>
             </div>
 
           </div>

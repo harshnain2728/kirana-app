@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "../config/axios";
 import { useCart } from "../context/CartContext";
+import toast from "react-hot-toast";
 
 const CATEGORIES = ["All", "Fruits", "Vegetables", "Dairy", "Snacks", "Beverages", "Bakery", "Staples", "Personal Care"];
 const SORT_OPTIONS = [
@@ -11,10 +12,10 @@ const SORT_OPTIONS = [
   { label: "Name: A → Z",       value: "name_asc"   },
 ];
 
-// ── 1. Stock helper functions ──
+// ── Stock helper ──
 function getStockStatus(stock) {
-  if (stock === undefined || stock === null) return null; // no stock info
-  if (stock === 0)  return { type: "oos",     label: "Out of Stock"     };
+  if (stock === undefined || stock === null) return null;
+  if (stock === 0)  return { type: "oos",      label: "Out of Stock"        };
   if (stock <= 3)   return { type: "critical", label: `Only ${stock} left!` };
   if (stock <= 10)  return { type: "low",      label: `Only ${stock} left`  };
   return { type: "ok", label: null };
@@ -26,7 +27,6 @@ export default function Products() {
   const [sortBy, setSortBy]                 = useState("");
   const [sortOpen, setSortOpen]             = useState(false);
   const [activeCategory, setActiveCategory] = useState("");
-  // ── 2. Track which product just got added (for animation) ──
   const [addedId, setAddedId]               = useState(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,6 +48,7 @@ export default function Products() {
       setProducts(Array.isArray(raw) ? raw : []);
     } catch {
       setProducts([]);
+      toast.error("Failed to load products. Please try again."); // ✅ network error feedback
     } finally {
       setLoading(false);
     }
@@ -71,26 +72,32 @@ export default function Products() {
 
   const getQty = (id) => cart[id]?.quantity || 0;
 
-  // ── 3. Production-ready addToCart with stock check ──
   const handleAddToCart = (p) => {
-    const stock = p.stock ?? p.stockQuantity ?? null;
+    const stock      = p.stock ?? p.stockQuantity ?? null;
     const currentQty = getQty(p.id);
 
-    // Prevent adding more than available stock
-    if (stock !== null && currentQty >= stock) return;
+    // ✅ Max stock guard with toast
+    if (stock !== null && currentQty >= stock) {
+      toast.error(`Only ${stock} in stock!`);
+      return;
+    }
 
-    addToCart(p);
+    addToCart(p); // CartContext already fires success toast
 
-    // Flash "Added" animation
     setAddedId(p.id);
     setTimeout(() => setAddedId(null), 600);
   };
 
-  // ── 4. Prevent increase beyond stock ──
   const handleIncrease = (p) => {
-    const stock = p.stock ?? p.stockQuantity ?? null;
+    const stock      = p.stock ?? p.stockQuantity ?? null;
     const currentQty = getQty(p.id);
-    if (stock !== null && currentQty >= stock) return;
+
+    // ✅ Max stock guard with toast
+    if (stock !== null && currentQty >= stock) {
+      toast.error(`Only ${stock} in stock!`);
+      return;
+    }
+
     increaseQty(p.id);
   };
 
@@ -132,13 +139,9 @@ export default function Products() {
           box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .kb-products-subheader-top {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 12px;
-          max-width: 1200px;
-          margin-left: auto;
-          margin-right: auto;
+          display: flex; align-items: center; justify-content: space-between;
+          margin-bottom: 12px; max-width: 1200px;
+          margin-left: auto; margin-right: auto;
         }
         .kb-back-btn {
           display: flex; align-items: center; gap: 6px;
@@ -161,9 +164,9 @@ export default function Products() {
         .kb-sort-wrap { position: relative; }
         .kb-sort-btn {
           display: flex; align-items: center; gap: 6px;
-          padding: 7px 14px;
-          border: 1.5px solid var(--kb-border); border-radius: 10px;
-          background: #fff; font-family: 'DM Sans', sans-serif;
+          padding: 7px 14px; border: 1.5px solid var(--kb-border);
+          border-radius: 10px; background: #fff;
+          font-family: 'DM Sans', sans-serif;
           font-size: 13px; font-weight: 600; color: var(--kb-text);
           cursor: pointer; transition: border-color .2s; white-space: nowrap;
         }
@@ -200,21 +203,15 @@ export default function Products() {
           font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
           color: var(--kb-muted); cursor: pointer; transition: all .2s; white-space: nowrap;
         }
-        .kb-cat-chip:hover { border-color: var(--kb-green); color: var(--kb-green); background: var(--kb-green-light); }
+        .kb-cat-chip:hover  { border-color: var(--kb-green); color: var(--kb-green); background: var(--kb-green-light); }
         .kb-cat-chip.active { background: var(--kb-green); color: #fff; border-color: var(--kb-green); }
 
-        .kb-products-content {
-          max-width: 1200px; margin: 0 auto; padding: 20px 16px 0;
-        }
-        .kb-active-filters {
-          display: flex; align-items: center; gap: 8px;
-          margin-bottom: 16px; flex-wrap: wrap;
-        }
+        .kb-products-content { max-width: 1200px; margin: 0 auto; padding: 20px 16px 0; }
+        .kb-active-filters { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
         .kb-filter-tag {
           display: flex; align-items: center; gap: 6px;
           background: var(--kb-green-light); color: var(--kb-green-dark);
-          font-size: 12px; font-weight: 600;
-          padding: 4px 10px; border-radius: 20px;
+          font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
         }
         .kb-filter-tag button {
           background: none; border: none; color: var(--kb-green);
@@ -228,7 +225,7 @@ export default function Products() {
         @media (min-width: 1024px) { .kb-products-grid { grid-template-columns: repeat(4, 1fr); } }
         @media (min-width: 1280px) { .kb-products-grid { grid-template-columns: repeat(5, 1fr); } }
 
-        /* ── Product card ── */
+        /* Card */
         .kb-p-card {
           background: #fff; border-radius: 16px;
           border: 1.5px solid var(--kb-border); padding: 12px;
@@ -236,22 +233,16 @@ export default function Products() {
           transition: box-shadow .2s, transform .2s, border-color .2s;
           position: relative; overflow: hidden;
         }
-        .kb-p-card:hover {
-          box-shadow: 0 8px 24px rgba(0,0,0,0.09);
-          transform: translateY(-2px); border-color: #d1f0db;
-        }
-        /* ── 5. Out of stock card dimmed ── */
-        .kb-p-card.oos {
-          opacity: 0.7;
-        }
+        .kb-p-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.09); transform: translateY(-2px); border-color: #d1f0db; }
+        .kb-p-card.oos { opacity: 0.7; }
 
         .kb-p-badge {
           position: absolute; top: 9px; left: 9px;
           font-size: 10px; font-weight: 700; padding: 2px 8px;
           border-radius: 20px; text-transform: uppercase; letter-spacing: 0.3px;
         }
-        .kb-p-badge.fresh  { background: #dcfce7; color: #15803d; }
-        .kb-p-badge.offer  { background: #fef9c3; color: #854d0e; }
+        .kb-p-badge.fresh { background: #dcfce7; color: #15803d; }
+        .kb-p-badge.offer { background: #fef9c3; color: #854d0e; }
 
         .kb-p-img-wrap {
           width: 100%; aspect-ratio: 1; border-radius: 12px;
@@ -270,28 +261,15 @@ export default function Products() {
         }
         .kb-p-unit { font-size: 11px; color: var(--kb-muted); margin-bottom: 4px; }
 
-        /* ── 6. Stock indicator styles ── */
-        .kb-p-stock {
-          font-size: 11px; font-weight: 700;
-          margin-bottom: 6px;
-          display: flex; align-items: center; gap: 4px;
-        }
+        .kb-p-stock { font-size: 11px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
         .kb-p-stock.critical { color: #ef4444; }
         .kb-p-stock.low      { color: #f59e0b; }
 
-        .kb-p-price-row {
-          display: flex; align-items: center; gap: 5px;
-          margin-bottom: 10px; flex-wrap: wrap;
-        }
-        .kb-p-price { font-size: 15px; font-weight: 800; color: var(--kb-text); }
-        .kb-p-mrp   { font-size: 11px; color: var(--kb-muted); text-decoration: line-through; }
-        .kb-p-discount {
-          font-size: 10px; font-weight: 700;
-          background: #dcfce7; color: #15803d;
-          padding: 1px 6px; border-radius: 6px;
-        }
+        .kb-p-price-row { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+        .kb-p-price    { font-size: 15px; font-weight: 800; color: var(--kb-text); }
+        .kb-p-mrp      { font-size: 11px; color: var(--kb-muted); text-decoration: line-through; }
+        .kb-p-discount { font-size: 10px; font-weight: 700; background: #dcfce7; color: #15803d; padding: 1px 6px; border-radius: 6px; }
 
-        /* ── 7. Add button with added animation ── */
         .kb-p-add-btn {
           width: 100%; padding: 8px;
           border: 2px solid var(--kb-green); border-radius: 10px;
@@ -299,21 +277,12 @@ export default function Products() {
           font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700;
           cursor: pointer; transition: background .15s, color .15s, transform .1s;
         }
-        .kb-p-add-btn:hover  { background: var(--kb-green); color: #fff; }
-        .kb-p-add-btn.added  {
-          background: var(--kb-green); color: #fff;
-          transform: scale(0.97);
-        }
-        /* ── Max stock reached — disable button ── */
-        .kb-p-add-btn:disabled {
-          border-color: #e5e7eb; color: #9ca3af;
-          cursor: not-allowed; background: #f9fafb;
-        }
+        .kb-p-add-btn:hover { background: var(--kb-green); color: #fff; }
+        .kb-p-add-btn.added { background: var(--kb-green); color: #fff; transform: scale(0.97); }
+        .kb-p-add-btn:disabled { border-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; background: #f9fafb; }
 
-        /* Stepper */
         .kb-p-stepper {
-          width: 100%; display: flex; align-items: center;
-          justify-content: space-between;
+          width: 100%; display: flex; align-items: center; justify-content: space-between;
           background: var(--kb-green); border-radius: 10px; overflow: hidden;
         }
         .kb-p-step-btn {
@@ -322,17 +291,10 @@ export default function Products() {
           cursor: pointer; line-height: 1;
           font-family: 'DM Sans', sans-serif; transition: background .15s;
         }
-        .kb-p-step-btn:hover { background: rgba(0,0,0,0.12); }
-        /* ── 8. Max stock reached — dim + button ── */
-        .kb-p-step-btn:disabled {
-          opacity: 0.4; cursor: not-allowed;
-        }
-        .kb-p-step-count {
-          color: #fff; font-size: 14px; font-weight: 700;
-          font-family: 'DM Sans', sans-serif;
-        }
+        .kb-p-step-btn:hover    { background: rgba(0,0,0,0.12); }
+        .kb-p-step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .kb-p-step-count { color: #fff; font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif; }
 
-        /* Out of stock */
         .kb-p-oos {
           width: 100%; padding: 8px; border-radius: 10px;
           background: #f3f4f6; color: #9ca3af;
@@ -353,10 +315,7 @@ export default function Products() {
 
         .kb-empty { text-align: center; padding: 80px 24px; }
         .kb-empty-icon { font-size: 64px; margin-bottom: 16px; }
-        .kb-empty h3 {
-          font-family: 'Syne', sans-serif; font-size: 20px;
-          font-weight: 800; color: var(--kb-text); margin: 0 0 8px;
-        }
+        .kb-empty h3 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--kb-text); margin: 0 0 8px; }
         .kb-empty p  { font-size: 14px; color: var(--kb-muted); margin: 0 0 24px; }
         .kb-empty-btn {
           background: var(--kb-green); color: #fff; border: none;
@@ -366,11 +325,7 @@ export default function Products() {
         }
         .kb-empty-btn:hover { background: var(--kb-green-dark); }
 
-        .kb-delivery-strip {
-          display: flex; align-items: center; gap: 6px;
-          font-size: 11px; color: var(--kb-green-dark);
-          font-weight: 600; margin-top: 6px;
-        }
+        .kb-delivery-strip { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--kb-green-dark); font-weight: 600; margin-top: 6px; }
       `}</style>
 
       <div className="kb-products-page" onClick={() => setSortOpen(false)}>
@@ -379,15 +334,11 @@ export default function Products() {
         <div className="kb-products-subheader">
           <div className="kb-products-subheader-top">
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <button className="kb-back-btn" onClick={() => navigate(-1)}>
-                ← Back
-              </button>
+              <button className="kb-back-btn" onClick={() => navigate(-1)}>← Back</button>
               <div>
                 <span className="kb-products-title">{pageTitle}</span>
                 {!loading && (
-                  <span className="kb-products-title-count">
-                    {sorted.length} items
-                  </span>
+                  <span className="kb-products-title-count">{sorted.length} items</span>
                 )}
               </div>
             </div>
@@ -469,22 +420,17 @@ export default function Products() {
                 const stock       = p.stock ?? p.stockQuantity ?? null;
                 const stockStatus = getStockStatus(stock);
                 const isOos       = stockStatus?.type === "oos";
-                // ── Is cart qty at max stock? ──
                 const isMaxed     = stock !== null && qty >= stock;
 
                 return (
-                  <div
-                    key={p.id}
-                    className={`kb-p-card ${isOos ? "oos" : ""}`}
-                  >
-                    {/* Badge */}
+                  <div key={p.id} className={`kb-p-card ${isOos ? "oos" : ""}`}>
+
                     {p.badge && (
                       <div className={`kb-p-badge ${p.badge === "Fresh" ? "fresh" : "offer"}`}>
                         {p.badge}
                       </div>
                     )}
 
-                    {/* Image */}
                     <div className="kb-p-img-wrap">
                       {p.imageUrl || p.image || p.img
                         ? <img
@@ -496,19 +442,16 @@ export default function Products() {
                       }
                     </div>
 
-                    {/* Info */}
                     <div className="kb-p-name">{p.name}</div>
                     <div className="kb-p-unit">{p.unit || p.quantity || "1 pc"}</div>
 
-                    {/* ── Stock indicator ── */}
-                    {stockStatus && stockStatus.label && (
+                    {stockStatus?.label && (
                       <div className={`kb-p-stock ${stockStatus.type}`}>
                         {stockStatus.type === "critical" ? "🔴" : "🟡"}
                         {stockStatus.label}
                       </div>
                     )}
 
-                    {/* Price */}
                     <div className="kb-p-price-row">
                       <span className="kb-p-price">₹{p.price}</span>
                       {hasDiscount && (
@@ -521,7 +464,6 @@ export default function Products() {
                       )}
                     </div>
 
-                    {/* ── CTA with stock validation ── */}
                     {isOos ? (
                       <div className="kb-p-oos">Out of Stock</div>
                     ) : qty === 0 ? (
@@ -535,14 +477,8 @@ export default function Products() {
                     ) : (
                       <>
                         <div className="kb-p-stepper">
-                          <button
-                            className="kb-p-step-btn"
-                            onClick={() => decreaseQty(p.id)}
-                          >
-                            −
-                          </button>
+                          <button className="kb-p-step-btn" onClick={() => decreaseQty(p.id)}>−</button>
                           <span className="kb-p-step-count">{qty}</span>
-                          {/* ── Disable + when max stock reached ── */}
                           <button
                             className="kb-p-step-btn"
                             onClick={() => handleIncrease(p)}
@@ -552,13 +488,9 @@ export default function Products() {
                             +
                           </button>
                         </div>
-                        {/* ── Show max reached message ── */}
+                        {/* ✅ Inline max stock message */}
                         {isMaxed && (
-                          <div style={{
-                            fontSize: 11, color: "#f59e0b",
-                            fontWeight: 600, marginTop: 4,
-                            textAlign: "center"
-                          }}>
+                          <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 600, marginTop: 4, textAlign: "center" }}>
                             Max stock reached
                           </div>
                         )}
