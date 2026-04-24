@@ -36,6 +36,9 @@ public class User implements UserDetails {        // ← added implements UserDe
     private String token;
     
     private String phone;
+    
+    @OneToMany(mappedBy ="user" , cascade =CascadeType.ALL)
+    private List<Address> addresses;
 
     public User() {}
     

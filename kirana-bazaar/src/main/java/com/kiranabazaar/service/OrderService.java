@@ -26,52 +26,33 @@ public class OrderService {
     public OrderService(OrderRepository orderRepository,
                         UserRepository userRepository,
                         ProductRepository productRepository) {
-        this.orderRepository = orderRepository;
-        this.userRepository = userRepository;
+        this.orderRepository   = orderRepository;
+        this.userRepository    = userRepository;
         this.productRepository = productRepository;
     }
 
-    // ===============================
-    // Get All Orders (Admin)
-    // ===============================
-
+    // ── Get All Orders (Admin) ──
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    // ===============================
-    // Update Order Status (Admin)
-    // ===============================
-
+    // ── Update Order Status (Admin) ──
     public Order updateOrderStatus(Long id, String status) {
-
         Order order = orderRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Order not found with ID: " + id));
-
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + id));
         order.setStatus(status);
-
         return orderRepository.save(order);
     }
 
-    // ===============================
-    // Place Order (User)
-    // ===============================
-
+    // ── Place Order (User) ──
     @Transactional
-    public Order placeOrder(Long userId,
-                            Map<String, Object> orderRequest) {
+    public Order placeOrder(Long userId, Map<String, Object> orderRequest) {
 
-        // ── Get user ──
-
+        // Get user
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "User not found with ID: " + userId));
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-        // ── Get items from frontend ──
-
+        // Get items from frontend
         List<Map<String, Object>> items =
                 (List<Map<String, Object>>) orderRequest.get("items");
 
@@ -79,87 +60,72 @@ public class OrderService {
             throw new RuntimeException("No items in order");
         }
 
-        // ── Create Order ──
-
+        // Create Order
         Order order = new Order();
-
         order.setUser(user);
         order.setOrderDate(LocalDateTime.now());
-
-        // Better default status
         order.setStatus("PLACED");
 
+        // ✅ Save delivery address from frontend request
+        Map<String, Object> address =
+                (Map<String, Object>) orderRequest.get("address");
+        if (address != null) {
+            order.setDeliveryName((String)    address.get("name"));
+            order.setDeliveryPhone((String)   address.get("phone"));
+            order.setDeliveryStreet((String)  address.get("street"));
+            order.setDeliveryCity((String)    address.get("city"));
+            order.setDeliveryPincode((String) address.get("pincode"));
+        }
+
+        // ✅ Save payment method
+        order.setPaymentMethod((String) orderRequest.get("paymentMethod"));
+
+        // Process items
         List<OrderItem> orderItems = new ArrayList<>();
-
         double totalAmount = 0;
-
-        // ── Process Each Item ──
 
         for (Map<String, Object> item : items) {
 
-            Long productId =
-                    Long.valueOf(item.get("id").toString());
+            Long   productId = Long.valueOf(item.get("id").toString());
+            int    quantity  = Integer.parseInt(item.get("quantity").toString());
+            double price     = Double.parseDouble(item.get("price").toString());
 
-            int quantity =
-                    Integer.parseInt(item.get("quantity").toString());
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException(
+                            "Product not found with ID: " + productId));
 
-            double price =
-                    Double.parseDouble(item.get("price").toString());
-
-            // ── Fetch product ──
-
-            Product product = productRepository
-                    .findById(productId)
-                    .orElseThrow(() ->
-                            new RuntimeException(
-                                    "Product not found with ID: "
-                                            + productId));
-
-            // ===============================
-            // STOCK VALIDATION
-            // ===============================
-
+            // Stock validation
             if (product.getStock() < quantity) {
-
                 throw new RuntimeException(
-                        "Insufficient stock for product: "
-                                + product.getName()
-                                + " | Available: "
-                                + product.getStock());
+                        "Insufficient stock for product: " + product.getName()
+                        + " | Available: " + product.getStock());
             }
 
-            // ===============================
-            // REDUCE STOCK
-            // ===============================
-
-            product.setStock(
-                    product.getStock() - quantity);
-
+            // Reduce stock
+            product.setStock(product.getStock() - quantity);
             productRepository.save(product);
 
-            // ===============================
-            // CREATE ORDER ITEM
-            // ===============================
-
+            // Create order item
             OrderItem orderItem = new OrderItem();
-
             orderItem.setOrder(order);
             orderItem.setProduct(product);
             orderItem.setQuantity(quantity);
             orderItem.setPrice(price);
 
             totalAmount += price * quantity;
-
             orderItems.add(orderItem);
         }
-
-        // ── Set order details ──
 
         order.setItems(orderItems);
         order.setTotalAmount(totalAmount);
 
-        // ── Save order ──
-
         return orderRepository.save(order);
+    }
+
+    // ── Get Orders by User ──
+    public List<Order> getOrdersByUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return orderRepository.findByUserOrderByOrderDateDesc(user);
     }
 }

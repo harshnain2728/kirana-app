@@ -35,6 +35,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/users/register", "/api/users/login").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
+                
+                // Allow Logged-in users to access addresses
+                .requestMatchers("/api/addresses/**").authenticated()
+                
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
